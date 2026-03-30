@@ -79,7 +79,7 @@ Give astrology answer in mystical tone.
 
     console.log("📡 Sending to API...");
 
-    const res = await fetch("./netlify/functions/gemini", {
+    const res = await fetch("./.netlify/functions/gemini", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
