@@ -74,7 +74,7 @@ Time: ${userProfile.time || "N/A"}
 Location: ${userProfile.location || "N/A"}
 
 Question: ${question}
-Give astrology answer in a calm, professional, confident tone like an experienced male astrologer. Avoid overly mystical or dramatic language. Keep it clear and insightful.
+Give astrology answer in a professional tone like an experienced male astrologer.
 `;
 
     console.log("📡 Sending to API...");
