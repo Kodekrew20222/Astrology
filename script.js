@@ -1,49 +1,73 @@
-// ================= PROFILE =================
+// ================== GLOBAL ==================
 let userProfile = {};
 
+// Load saved user
 window.onload = () => {
   const saved = localStorage.getItem("astroUser");
-  if (saved) userProfile = JSON.parse(saved);
+  if (saved) {
+    userProfile = JSON.parse(saved);
+    console.log("Loaded user:", userProfile);
+  }
 };
 
+// Save user
 function saveProfile() {
   userProfile = {
-    name: name.value,
-    dob: dob.value,
-    time: time.value,
-    location: location.value
+    name: document.getElementById("name").value,
+    dob: document.getElementById("dob").value,
+    time: document.getElementById("time").value,
+    location: document.getElementById("location").value
   };
+
   localStorage.setItem("astroUser", JSON.stringify(userProfile));
-  alert("Saved ✅");
+  alert("Profile Saved ✅");
 }
 
-// ================= MIC =================
-const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+// ================== SPEECH ==================
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (!SpeechRecognition) {
+  alert("Speech Recognition not supported in this browser");
+}
+
+const recognition = new SpeechRecognition();
 recognition.lang = "en-IN";
 
+// Click mic
 function startListening() {
-  status.innerText = "Listening...";
-  recognition.start();
+  console.log("🎤 Mic clicked");
+
+  document.getElementById("status").innerText = "Listening...";
+  
+  try {
+    recognition.start();
+  } catch (err) {
+    console.warn("Already started:", err.message);
+  }
 }
 
-recognition.onresult = (e) => {
-  const question = e.results[0][0].transcript;
+// When speech is captured
+recognition.onresult = function(event) {
+  const question = event.results[0][0].transcript;
+
+  console.log("🗣 User said:", question);
+
+  document.getElementById("status").innerText = "Processing...";
+
   askGemini(question);
 };
 
-// ================= MANUAL INPUT =================
-function sendManual() {
-  const question = manualInput.value;
-  if (!question) return;
-  askGemini(question);
-}
+// Mic error
+recognition.onerror = function(event) {
+  console.error("❌ Mic error:", event.error);
+  document.getElementById("status").innerText = "Mic Error: " + event.error;
+};
 
-// ================= GEMINI =================
+// ================== GEMINI ==================
 async function askGemini(question) {
   try {
-    status.innerText = "Processing...";
-
     const prompt = `
+User Details:
 Name: ${userProfile.name || "N/A"}
 DOB: ${userProfile.dob || "N/A"}
 Time: ${userProfile.time || "N/A"}
@@ -53,39 +77,68 @@ Question: ${question}
 Give astrology answer in mystical tone.
 `;
 
-    const res = await fetch("/.netlify/functions/gemini", {
+    console.log("📡 Sending to API...");
+
+    const res = await fetch("./.netlify/functions/gemini", {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({ prompt })
     });
 
+    console.log("📥 Response status:", res.status);
+
+    if (!res.ok) {
+      throw new Error("Server error: " + res.status);
+    }
+
     const data = await res.json();
+    console.log("📦 API Data:", data);
 
-    responseText.innerText = data.reply;
+    const reply = data.reply || "No response from AI";
 
-    speak(data.reply);
+    document.getElementById("responseText").innerText = reply;
+    document.getElementById("status").innerText = "Done ✅";
 
-    status.innerText = "Done ✅";
+    // 🔊 SPEAK RESPONSE (ADDED)
+    speak(reply);
 
   } catch (err) {
-    console.error(err);
-    status.innerText = "Error ❌";
+    console.error("❌ API Error:", err);
+    document.getElementById("status").innerText = "Error: " + err.message;
   }
 }
 
-// ================= TTS (FREE) =================
+// ================== TEXT TO SPEECH ==================
+let voices = [];
+
+// Load voices properly
+speechSynthesis.onvoiceschanged = () => {
+  voices = speechSynthesis.getVoices();
+};
+
 function speak(text) {
   if (!text) return;
+
+  // Stop previous speech
+  speechSynthesis.cancel();
 
   const speech = new SpeechSynthesisUtterance(text);
 
   speech.rate = 0.95;
   speech.pitch = 0.9;
 
-  const voices = speechSynthesis.getVoices();
+  // Ensure voices are available
+  if (!voices.length) {
+    voices = speechSynthesis.getVoices();
+  }
 
-  // Try better voice
-  speech.voice = voices.find(v => v.name.includes("Google")) || voices[0];
+  // Pick best available voice
+  speech.voice =
+    voices.find(v => v.name.includes("Google")) ||
+    voices.find(v => v.lang === "en-IN") ||
+    voices[0];
 
   speechSynthesis.speak(speech);
 }
