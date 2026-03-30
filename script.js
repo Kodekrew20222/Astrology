@@ -74,7 +74,7 @@ Time: ${userProfile.time || "N/A"}
 Location: ${userProfile.location || "N/A"}
 
 Question: ${question}
-Give astrology answer in mystical tone.
+Give astrology answer in a calm, professional, confident tone like an experienced male astrologer. Avoid overly mystical or dramatic language. Keep it clear and insightful.
 `;
 
     console.log("📡 Sending to API...");
@@ -121,23 +121,22 @@ speechSynthesis.onvoiceschanged = () => {
 function speak(text) {
   if (!text) return;
 
-  // Stop previous speech
   speechSynthesis.cancel();
 
   const speech = new SpeechSynthesisUtterance(text);
 
-  speech.rate = 0.95;
-  speech.pitch = 0.9;
+  speech.rate = 0.9;
+  speech.pitch = 0.8;
 
-  // Ensure voices are available
   if (!voices.length) {
     voices = speechSynthesis.getVoices();
   }
 
-  // Pick best available voice
   speech.voice =
-    voices.find(v => v.name.includes("Google")) ||
-    voices.find(v => v.lang === "en-IN") ||
+    voices.find(v => v.name.toLowerCase().includes("male")) ||
+    voices.find(v => v.name.toLowerCase().includes("david")) ||
+    voices.find(v => v.name.toLowerCase().includes("google uk english male")) ||
+    voices.find(v => v.lang === "en-GB") ||
     voices[0];
 
   speechSynthesis.speak(speech);
