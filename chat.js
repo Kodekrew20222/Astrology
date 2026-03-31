@@ -42,18 +42,14 @@ recognition.onresult = async (event) => {
 
     const prompt = `
 You are a professional astrologer speaking directly to the user.
-
 Speak naturally like a human. No symbols, no formatting.
-
 User:
 Name: ${userData?.name}
 DOB: ${userData?.dob}
 Time: ${userData?.time}
 Place: ${userData?.place}
-
 Question: ${userText}
-
-Answer conversationally like spoken advice.
+Answer conversationally like spoken advice and keep it under 1500 tokens.
 `;
 
     console.log("Sending Prompt:", prompt);

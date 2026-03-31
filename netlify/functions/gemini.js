@@ -5,16 +5,10 @@ export async function handler(event) {
     console.log("✅ Function triggered");
 
     const body = JSON.parse(event.body);
-    console.log("📥 Incoming Body:", JSON.stringify(body));
 
-    // ⏱️ Extend timeout handling
+    // ⏱️ Timeout controller (IMPORTANT)
     const controller = new AbortController();
-
-    // Give max safe time (Netlify limit ~30s)
-    const timeout = setTimeout(() => {
-      console.log("⏳ Aborting request due to timeout...");
-      controller.abort();
-    }, 28000); // 28 sec safe margin
+    const timeout = setTimeout(() => controller.abort(), 100000); // 25 sec max
 
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + API_KEY,
@@ -27,8 +21,9 @@ export async function handler(event) {
         body: JSON.stringify({
           ...body,
 
-          // ✅ REMOVE TOKEN LIMIT
+          // ⚡ Force faster response
           generationConfig: {
+            maxOutputTokens: 1500,
             temperature: 0.7
           }
         })
@@ -41,7 +36,7 @@ export async function handler(event) {
 
     const data = await response.json();
 
-    console.log("🧠 Full Gemini Response:", JSON.stringify(data, null, 2));
+    console.log("🧠 Gemini Response:", JSON.stringify(data));
 
     let reply = "No response from AI";
 
@@ -50,8 +45,6 @@ export async function handler(event) {
       reply = parts.map(p => p.text || "").join(" ").trim();
     }
 
-    console.log("💬 Final Reply Length:", reply.length);
-
     return {
       statusCode: 200,
       body: JSON.stringify({ reply })
@@ -59,16 +52,6 @@ export async function handler(event) {
 
   } catch (error) {
     console.error("❌ Function Error:", error);
-
-    // 🔁 Retry once if timeout happens
-    if (error.name === "AbortError") {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          reply: "The response is taking longer than expected. Please try again."
-        })
-      };
-    }
 
     return {
       statusCode: 500,
