@@ -5,7 +5,10 @@ export async function handler(event) {
     console.log("✅ Function triggered");
 
     const body = JSON.parse(event.body);
-    console.log("📥 Incoming Body:", JSON.stringify(body));
+
+    // ⏱️ Timeout controller (IMPORTANT)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000); // 25 sec max
 
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + API_KEY,
@@ -14,17 +17,27 @@ export async function handler(event) {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(body)
+        signal: controller.signal,
+        body: JSON.stringify({
+          ...body,
+
+          // ⚡ Force faster response
+          generationConfig: {
+            maxOutputTokens: 300,
+            temperature: 0.7
+          }
+        })
       }
     );
+
+    clearTimeout(timeout);
 
     console.log("🌐 API Status:", response.status);
 
     const data = await response.json();
 
-    console.log("🧠 Full Gemini Response:", JSON.stringify(data, null, 2));
+    console.log("🧠 Gemini Response:", JSON.stringify(data));
 
-    // ✅ Extract reply safely
     let reply = "No response from AI";
 
     if (data.candidates && data.candidates.length > 0) {
@@ -32,17 +45,9 @@ export async function handler(event) {
       reply = parts.map(p => p.text || "").join(" ").trim();
     }
 
-    console.log("💬 Final Reply:", reply);
-
     return {
       statusCode: 200,
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        reply,
-        raw: data // optional for debugging
-      })
+      body: JSON.stringify({ reply })
     };
 
   } catch (error) {
@@ -50,12 +55,8 @@ export async function handler(event) {
 
     return {
       statusCode: 500,
-      headers: {
-        "Content-Type": "application/json"
-      },
       body: JSON.stringify({
-        error: "Internal server error",
-        details: error.message
+        error: error.message
       })
     };
   }

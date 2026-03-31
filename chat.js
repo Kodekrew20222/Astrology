@@ -41,26 +41,19 @@ recognition.onresult = async (event) => {
     micBtn.innerText = "Processing...";
 
     const prompt = `
-You are a professional astrologer speaking directly to a client.
+You are a professional astrologer speaking directly to the user.
 
-STRICT INSTRUCTIONS:
-- Do NOT use symbols like *, #, bullet points, or markdown.
-- Do NOT format text.
-- Speak like a human giving advice in a calm, confident tone.
-- Response should feel like a script being spoken aloud.
-- Use simple conversational sentences.
-- Keep it natural, warm, and engaging.
+Speak naturally like a human. No symbols, no formatting.
 
-User Details:
+User:
 Name: ${userData?.name}
 DOB: ${userData?.dob}
 Time: ${userData?.time}
 Place: ${userData?.place}
 
-User Question:
-${userText}
+Question: ${userText}
 
-Now respond as if you are speaking directly to the user.
+Answer conversationally like spoken advice.
 `;
 
     console.log("Sending Prompt:", prompt);
