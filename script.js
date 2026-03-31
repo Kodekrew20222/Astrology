@@ -77,6 +77,8 @@ Question: ${question}
 Give astrology answer in a professional tone like an experienced male astrologer.
 `;
 
+console.log("🧠 FINAL PROMPT:\n", prompt);
+
     console.log("📡 Sending to API...");
 
     const res = await fetch("./.netlify/functions/gemini", {
