@@ -1,0 +1,29 @@
+body {
+  font-family: Arial, sans-serif;
+}
+
+#chatBox {
+  max-height: 80vh;
+}
+
+.message {
+  padding: 10px 15px;
+  border-radius: 15px;
+  margin-bottom: 10px;
+  max-width: 70%;
+}
+
+.user {
+  background: #d1e7ff;
+  align-self: flex-end;
+}
+
+.bot {
+  background: #ffffff;
+  border: 1px solid #ddd;
+}
+
+.input-bar {
+  position: sticky;
+  bottom: 0;
+}
