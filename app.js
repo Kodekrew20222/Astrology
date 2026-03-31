@@ -10,6 +10,8 @@ form.addEventListener("submit", (e) => {
     place: document.getElementById("place").value
   };
 
+  console.log("Saving User Data:", userData);
+
   localStorage.setItem("astroUser", JSON.stringify(userData));
 
   const modal = new bootstrap.Modal(document.getElementById('successModal'));
@@ -17,5 +19,6 @@ form.addEventListener("submit", (e) => {
 });
 
 document.getElementById("goChat").onclick = () => {
+  console.log("Redirecting to chat...");
   window.location.href = "chat.html";
 };

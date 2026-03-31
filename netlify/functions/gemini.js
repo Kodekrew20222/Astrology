@@ -1,34 +1,62 @@
-exports.handler = async (event) => {
+export async function handler(event) {
   try {
-    const { prompt } = JSON.parse(event.body);
+    const API_KEY = process.env.GEMINI_API_KEY;
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-      method: "POST",
+    console.log("✅ Function triggered");
+
+    const body = JSON.parse(event.body);
+    console.log("📥 Incoming Body:", JSON.stringify(body));
+
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + API_KEY,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      }
+    );
+
+    console.log("🌐 API Status:", response.status);
+
+    const data = await response.json();
+
+    console.log("🧠 Full Gemini Response:", JSON.stringify(data, null, 2));
+
+    // ✅ Extract reply safely
+    let reply = "No response from AI";
+
+    if (data.candidates && data.candidates.length > 0) {
+      const parts = data.candidates[0]?.content?.parts || [];
+      reply = parts.map(p => p.text || "").join(" ").trim();
+    }
+
+    console.log("💬 Final Reply:", reply);
+
+    return {
+      statusCode: 200,
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }]
-          }
-        ]
+        reply,
+        raw: data // optional for debugging
       })
-    });
-
-    const data = await res.json();
-
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ reply })
     };
 
   } catch (error) {
+    console.error("❌ Function Error:", error);
+
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message })
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        error: "Internal server error",
+        details: error.message
+      })
     };
   }
-};
+}
