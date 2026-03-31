@@ -8,7 +8,7 @@ export async function handler(event) {
 
     // ⏱️ Timeout controller (IMPORTANT)
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 80000); // 25 sec max
+    const timeout = setTimeout(() => controller.abort(), 90000); // 25 sec max
 
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + API_KEY,
@@ -23,7 +23,7 @@ export async function handler(event) {
 
           // ⚡ Force faster response
           generationConfig: {
-            maxOutputTokens: 1300,
+            maxOutputTokens: 1200,
             temperature: 0.7
           }
         })
