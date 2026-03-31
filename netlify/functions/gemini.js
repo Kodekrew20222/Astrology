@@ -2,79 +2,81 @@ export async function handler(event) {
   try {
     const API_KEY = process.env.GEMINI_API_KEY;
 
-    // ✅ Handle GET (for browser testing)
-    if (event.httpMethod === "GET") {
+    if (!API_KEY) {
       return {
-        statusCode: 200,
-        body: JSON.stringify({ message: "Function running ✅" }),
+        statusCode: 500,
+        body: JSON.stringify({ error: "API key missing" }),
       };
     }
 
-    // ✅ Parse request safely
-    if (!event.body) {
+    const { prompt } = JSON.parse(event.body || "{}");
+
+    if (!prompt) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Empty body" }),
+        body: JSON.stringify({ error: "No prompt provided" }),
       };
     }
 
-    const { prompt } = JSON.parse(event.body);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
 
-    console.log("📩 PROMPT:", prompt);
-
-    // ✅ Correct request body for Gemini
-    const requestBody = {
-      contents: [
-        {
-          parts: [{ text: prompt }],
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      ],
-    };
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+        signal: controller.signal,
+      }
+    );
 
-    // ✅ Try Gemini 3 first, fallback to 1.5
-    async function callModel(model) {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody),
-        }
-      );
+    clearTimeout(timeout);
 
-      const data = await res.json();
-      console.log(`🔍 ${model} response:`, JSON.stringify(data));
-      return data;
+    if (!response.ok) {
+      const errText = await response.text();
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: errText }),
+      };
     }
 
-    let data = await callModel("gemini-3-flash");
+    const data = await response.json();
+    console.log("Gemini FULL:", JSON.stringify(data));
 
-    // 🔁 Fallback if Gemini 3 fails
-    if (!data.candidates || data.candidates.length === 0) {
-      console.log("⚠️ Gemini 3 failed → fallback to 1.5");
-      data = await callModel("gemini-1.5-flash");
-    }
-
-    // ✅ Extract reply safely
     let reply = "No response generated";
 
-    if (data.candidates?.length) {
-      const parts = data.candidates[0]?.content?.parts;
-      if (parts?.length) {
-        reply = parts.map(p => p.text || "").join(" ");
+    try {
+      if (data.candidates && data.candidates.length > 0) {
+        const parts = data.candidates[0].content.parts;
+        if (parts) {
+          reply = parts.map(p => p.text || "").join(" ").trim();
+        }
       }
+
+      if (!reply) {
+        reply = "No meaningful response";
+      }
+    } catch (e) {
+      reply = "Error reading response";
     }
 
     return {
       statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({ reply }),
     };
 
   } catch (error) {
-    console.error("❌ Function Error:", error);
+    if (error.name === "AbortError") {
+      return {
+        statusCode: 408,
+        body: JSON.stringify({ error: "Request timeout" }),
+      };
+    }
 
     return {
       statusCode: 500,
