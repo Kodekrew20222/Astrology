@@ -44,12 +44,9 @@ recognition.onresult = async (event) => {
 You are an astrologer speaking directly to the user.
 
 Rules:
-Speak naturally like a human
-No symbols or formatting
-Keep response short (3-4 sentences)
-Complete thoughts only
+Speak naturally like a human, No symbols or formatting, Keep response short (3-4 sentences)
 
-User:
+User Data:
 Name: ${userData?.name}
 DOB: ${userData?.dob}
 Time: ${userData?.time}
