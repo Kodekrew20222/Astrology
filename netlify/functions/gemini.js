@@ -7,27 +7,25 @@ export async function handler(event) {
     const body = JSON.parse(event.body);
 
     // ⏱️ Timeout controller (IMPORTANT)
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 29000); // 25 sec max
+    //const controller = new AbortController();
+    //const timeout = setTimeout(() => controller.abort(), 29000); // 25 sec max
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + API_KEY,
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=" + API_KEY,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        signal: controller.signal,
         body: JSON.stringify({
           ...body,
-
-          // ⚡ Force faster response
-          generationConfig: {
-            maxOutputTokens: 700,
-            temperature: 0.6,
-            topK: 20,
-            topP: 0.8
-          }
+          contents: incomingData.contents,
+        generationConfig: {
+          maxOutputTokens: 300, // Kept short for speed
+          temperature: 0.7,
+          // 'minimal' tells Gemini 3 to skip deep reasoning and answer immediately
+          thinking_level: "minimal" 
+        }
         })
       }
     );
