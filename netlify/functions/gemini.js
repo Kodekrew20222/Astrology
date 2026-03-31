@@ -23,8 +23,10 @@ export async function handler(event) {
 
           // ⚡ Force faster response
           generationConfig: {
-            maxOutputTokens: 1000,
-            temperature: 0.7
+            maxOutputTokens: 600,
+            temperature: 0.6,
+            topK: 20,
+            topP: 0.8
           }
         })
       }

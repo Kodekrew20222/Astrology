@@ -41,15 +41,22 @@ recognition.onresult = async (event) => {
     micBtn.innerText = "Processing...";
 
     const prompt = `
-You are a professional astrologer speaking directly to the user.
-Speak naturally like a human. No symbols, no formatting.
+You are an astrologer giving quick spoken advice.
+
+Rules:
+- Speak naturally like a human
+- No symbols or formatting
+- Keep response short and complete (3–5 sentences max)
+
 User:
 Name: ${userData?.name}
 DOB: ${userData?.dob}
 Time: ${userData?.time}
 Place: ${userData?.place}
+
 Question: ${userText}
-Answer conversationally like spoken advice and keep it under 900 tokens.
+
+Give a concise spoken answer.
 `;
 
     console.log("Sending Prompt:", prompt);
