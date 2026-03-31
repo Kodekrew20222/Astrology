@@ -1,101 +1,128 @@
 // ================== GLOBAL ==================
 let userProfile = {};
-let voices = [];
-
-// Load voices properly
-speechSynthesis.onvoiceschanged = () => {
-  voices = speechSynthesis.getVoices();
-};
 
 // Load saved user
 window.onload = () => {
-  const saved = localStorage.getItem("astroUser");
-  if (saved) {
-    userProfile = JSON.parse(saved);
-  }
+    const saved = localStorage.getItem("astroUser");
+    if (saved) {
+        userProfile = JSON.parse(saved);
+        console.log("Loaded user:", userProfile);
+    }
 };
 
 // Save user
 function saveProfile() {
-  userProfile = {
-    name: name.value,
-    dob: dob.value,
-    time: time.value,
-    location: location.value
-  };
-  localStorage.setItem("astroUser", JSON.stringify(userProfile));
-  alert("Profile Saved ✅");
+    userProfile = {
+        name: document.getElementById("name").value,
+        dob: document.getElementById("dob").value,
+        time: document.getElementById("time").value,
+        location: document.getElementById("location").value
+    };
+
+    localStorage.setItem("astroUser", JSON.stringify(userProfile));
+    alert("Profile Saved ✅");
 }
 
 // ================== SPEECH ==================
-const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-recognition.lang = "en-IN";
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-function startListening() {
-  status.innerText = "Listening...";
-  recognition.start();
+if (!SpeechRecognition) {
+    alert("Speech Recognition not supported in this browser");
 }
 
-recognition.onresult = (event) => {
-  const question = event.results[0][0].transcript;
-  status.innerText = "Processing...";
-  askGemini(question);
+const recognition = new SpeechRecognition();
+recognition.lang = "en-IN";
+
+// Click mic
+function startListening() {
+    console.log("🎤 Mic clicked");
+    document.getElementById("status").innerText = "Listening...";
+
+    try {
+        recognition.start();
+    } catch (err) {
+        console.warn("Already started:", err.message);
+    }
+}
+
+// When speech is captured
+recognition.onresult = function (event) {
+    const question = event.results[0][0].transcript;
+
+    console.log("🗣 User said:", question);
+    document.getElementById("status").innerText = "Processing...";
+
+    askGemini(question);
 };
 
-recognition.onerror = (e) => {
-  status.innerText = "Mic Error";
+// Mic error
+recognition.onerror = function (event) {
+    console.error("❌ Mic error:", event.error);
+    document.getElementById("status").innerText = "Mic Error: " + event.error;
 };
 
 // ================== GEMINI ==================
-async function askGemini(question, retry = true) {
-  try {
-    const prompt = `
-User: ${userProfile.name || "N/A"}, DOB: ${userProfile.dob || "N/A"}, Time: ${userProfile.time || "N/A"}, Location: ${userProfile.location || "N/A"}.
-Question: ${question}.
-Answer professionally like an experienced male astrologer.
-`;
+async function askGemini(question) {
+    try {
+        const prompt = `
+User Details:
+Name: ${userProfile.name || "N/A"}
+DOB: ${userProfile.dob || "N/A"}
+Time: ${userProfile.time || "N/A"}
+Location: ${userProfile.location || "N/A"}
 
-    const res = await fetch("/.netlify/functions/gemini", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ prompt })
-    });
+Question: ${question}
 
-    if (!res.ok) throw new Error("Server error");
+Give astrology answer in mystical tone.
+        `;
 
-    const data = await res.json();
+        console.log("📡 Sending to API...");
 
-    const reply = data.reply || "No response";
+        const res = await fetch("./.netlify/functions/gemini", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ prompt })
+        });
 
-    responseText.innerText = reply;
-    status.innerText = "Done ✅";
+        console.log("📥 Response status:", res.status);
 
-    speak(reply);
+        if (!res.ok) {
+            throw new Error("Server error: " + res.status);
+        }
 
-  } catch (err) {
-    if (retry) return askGemini(question, false);
-    status.innerText = "Server busy, try again";
-  }
+        const data = await res.json();
+        console.log("📦 API Data:", data);
+
+        const reply = data.reply || "No response from AI";
+
+        document.getElementById("responseText").innerText = reply;
+        document.getElementById("status").innerText = "Done ✅";
+
+        speak(reply);
+
+    } catch (err) {
+        console.error("❌ API Error:", err);
+        document.getElementById("status").innerText = "Error: " + err.message;
+    }
 }
 
 // ================== TEXT TO SPEECH ==================
 function speak(text) {
-  if (!text) return;
+    if (!text) return;
 
-  speechSynthesis.cancel();
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.rate = 0.95;
+    speech.pitch = 0.9;
 
-  const speech = new SpeechSynthesisUtterance(text);
+    const voices = speechSynthesis.getVoices();
 
-  speech.rate = 0.9;
-  speech.pitch = 0.8;
+    // Try to pick a better voice
+    speech.voice =
+        voices.find(v => v.name.includes("Google UK English Male")) ||
+        voices.find(v => v.name.includes("Google")) ||
+        voices[0];
 
-  if (!voices.length) voices = speechSynthesis.getVoices();
-
-  speech.voice =
-    voices.find(v => v.name.toLowerCase().includes("male")) ||
-    voices.find(v => v.name.toLowerCase().includes("david")) ||
-    voices.find(v => v.lang === "en-GB") ||
-    voices[0];
-
-  speechSynthesis.speak(speech);
+    speechSynthesis.speak(speech);
 }
