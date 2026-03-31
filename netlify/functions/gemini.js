@@ -21,16 +21,22 @@ export async function handler(event) {
       ],
     };
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000); // 8 sec
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
-      }
+        signal: controller.signal,
+      },
     );
+
+    clearTimeout(timeout);
 
     const data = await response.json();
     console.log("Gemini RAW:", JSON.stringify(data));
@@ -47,7 +53,6 @@ export async function handler(event) {
       },
       body: JSON.stringify({ reply }),
     };
-
   } catch (error) {
     console.error("Function Error:", error);
 
