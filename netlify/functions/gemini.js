@@ -11,7 +11,7 @@ export async function handler(event) {
     //const timeout = setTimeout(() => controller.abort(), 29000); // 25 sec max
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=" + API_KEY,
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + API_KEY,
       {
         method: "POST",
         headers: {
@@ -22,7 +22,6 @@ export async function handler(event) {
           contents: incomingData.contents,
         generationConfig: {
           maxOutputTokens: 300, // Kept short for speed
-          temperature: 0.7,
           // 'minimal' tells Gemini 3 to skip deep reasoning and answer immediately
           thinking_level: "minimal" 
         }
