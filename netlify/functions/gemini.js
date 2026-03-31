@@ -7,27 +7,46 @@ export async function handler(event) {
     const body = JSON.parse(event.body);
 
     // ⏱️ Timeout controller (IMPORTANT)
-    //const controller = new AbortController();
-    //const timeout = setTimeout(() => controller.abort(), 29000); // 25 sec max
+    const controller = new AbortController();
+    const timeout = setTimeout(() => {
+      console.log("⏳ Aborting request before Netlify timeout");
+      controller.abort();
+    }, 28000); // SAFE BUFFER
 
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + API_KEY,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          ...body,
-          contents: incomingData.contents,
-        generationConfig: {
-          maxOutputTokens: 300, // Kept short for speed
-          // 'minimal' tells Gemini 3 to skip deep reasoning and answer immediately
-          thinking_level: "minimal" 
+    let response;
+
+    try {
+      response = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + API_KEY,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            ...body,
+            generationConfig: {
+              maxOutputTokens: 600, // balanced
+              temperature: 0.6,
+            },
+          }),
         }
-        })
+      );
+    } catch (err) {
+      if (err.name === "AbortError") {
+        console.log("⚠️ Request aborted safely");
+
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            reply:
+              "This reading is taking longer than expected. Please try asking in a slightly shorter way.",
+          }),
+        };
       }
-    );
+      throw err;
+    }
 
     clearTimeout(timeout);
 

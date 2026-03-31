@@ -40,9 +40,23 @@ recognition.onresult = async (event) => {
 
     micBtn.innerText = "Processing...";
 
-    const prompt = `You are a professional astrologer. Give a SHORT (3-4 sentences), spoken-style answer. No symbols.
-    User: ${userData?.name}, Born: ${userData?.dob} at ${userData?.time} in ${userData?.place}.
-    Question: ${userText}`;
+    const prompt = `
+You are an astrologer speaking directly to the user.
+
+Rules:
+Speak naturally like a human
+No symbols or formatting
+Keep response short (3-4 sentences)
+Complete thoughts only
+
+User:
+Name: ${userData?.name}
+DOB: ${userData?.dob}
+Time: ${userData?.time}
+Place: ${userData?.place}
+
+Question: ${userText}
+`;
 
     console.log("Sending Prompt:", prompt);
 
