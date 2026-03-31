@@ -41,7 +41,15 @@ recognition.onresult = async (event) => {
     micBtn.innerText = "Processing...";
 
     const prompt = `
-You are an expert astrologer.
+You are a professional astrologer speaking directly to a client.
+
+STRICT INSTRUCTIONS:
+- Do NOT use symbols like *, #, bullet points, or markdown.
+- Do NOT format text.
+- Speak like a human giving advice in a calm, confident tone.
+- Response should feel like a script being spoken aloud.
+- Use simple conversational sentences.
+- Keep it natural, warm, and engaging.
 
 User Details:
 Name: ${userData?.name}
@@ -52,7 +60,7 @@ Place: ${userData?.place}
 User Question:
 ${userText}
 
-Answer in a friendly, professional tone.
+Now respond as if you are speaking directly to the user.
 `;
 
     console.log("Sending Prompt:", prompt);
@@ -108,9 +116,25 @@ function speak(text) {
 
   const speech = new SpeechSynthesisUtterance(text);
 
-  speech.lang = "en-IN";
-  speech.pitch = 1;
-  speech.rate = 0.95;
+  speech.lang = "en-US";
+  speech.rate = 0.9;
+  speech.pitch = 0.8; // lower pitch = more male-like
+
+  const voices = speechSynthesis.getVoices();
+
+  console.log("Available voices:", voices);
+
+  // Try to pick a male voice
+  let selectedVoice =
+    voices.find(v => v.name.toLowerCase().includes("male")) ||
+    voices.find(v => v.name.toLowerCase().includes("david")) ||
+    voices.find(v => v.name.toLowerCase().includes("en-us")) ||
+    voices[0];
+
+  if (selectedVoice) {
+    speech.voice = selectedVoice;
+    console.log("Using voice:", selectedVoice.name);
+  }
 
   speechSynthesis.speak(speech);
 }
