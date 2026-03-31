@@ -49,7 +49,7 @@ DOB: ${userData?.dob}
 Time: ${userData?.time}
 Place: ${userData?.place}
 Question: ${userText}
-Answer conversationally like spoken advice and keep it under 1000 tokens.
+Answer conversationally like spoken advice and keep it under 900 tokens.
 `;
 
     console.log("Sending Prompt:", prompt);
