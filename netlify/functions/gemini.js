@@ -11,7 +11,7 @@ export async function handler(event) {
     const timeout = setTimeout(() => {
       console.log("⏳ Aborting request before Netlify timeout");
       controller.abort();
-    }, 28000); // SAFE BUFFER
+    }, 80000); // SAFE BUFFER
 
     let response;
 
@@ -27,7 +27,7 @@ export async function handler(event) {
           body: JSON.stringify({
             ...body,
             generationConfig: {
-              maxOutputTokens: 600, // balanced
+              maxOutputTokens: 900, // balanced
               temperature: 0.6,
             },
           }),
